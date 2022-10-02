@@ -1,0 +1,2 @@
+[31mDATABASE-> ERROR: 10-02-2022 16:32:50 -> Unable to connect to db with this error Error 1045: Access denied for user 'instabug'@'localhost' (using password: YES)
+[0m
