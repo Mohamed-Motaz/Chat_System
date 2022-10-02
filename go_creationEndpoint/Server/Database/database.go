@@ -30,7 +30,7 @@ func connect() *gorm.DB {
 
 	dsn := generateDSN(
 		DbUser, DbPassword, DbProtocol,
-		SCHEMA_NAME, DbHost, DbPort, DbSettings)
+		"", DbHost, DbPort, DbSettings)
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {

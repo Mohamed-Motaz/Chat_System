@@ -1,2 +1,0 @@
-[31mDATABASE-> ERROR: 10-02-2022 16:46:28 -> Unable to connect to db with this error Error 1049: Unknown database 'instabug'
-[0m
