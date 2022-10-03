@@ -3,6 +3,7 @@ package Server
 import (
 	db "Server/Database"
 	logger "Server/Logger"
+	q "Server/MessageQueue"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -59,7 +60,7 @@ func (server *Server) addApplication(w http.ResponseWriter, r *http.Request) {
 	success(w, r, res, logger.ESSENTIAL)
 }
 
-func (server *Server) updateApplication(w http.ResponseWriter, r *http.Request) {
+func (server *Server) addChat(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		failure(w, r, http.StatusBadRequest, "invalid request")
 		return
@@ -72,39 +73,25 @@ func (server *Server) updateApplication(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	bytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		failure(w, r, http.StatusInternalServerError, "unable to read request")
-		return
-	}
+	logger.LogInfo(logger.SERVER, logger.NON_ESSENTIAL, "The http received message to addChat is %+v", nil)
 
-	req := &UpdateApplicationReq{}
-	err = json.Unmarshal(bytes, req)
-	if err != nil {
-		logger.LogError(logger.SERVER, logger.ESSENTIAL, "Unable to parse request to updateApplication %v\nwith error %v", string(bytes), err)
-		failure(w, r, http.StatusBadRequest, "unable to martial request")
-		return
-	}
-
-	req.Name = strings.TrimSpace(req.Name)
-	if len(req.Name) == 0 {
-		logger.LogError(logger.SERVER, logger.ESSENTIAL, "No name in request to updateApplication %v", string(bytes))
-		failure(w, r, http.StatusBadRequest, "no valid name")
-		return
-	}
-
-	logger.LogInfo(logger.SERVER, logger.NON_ESSENTIAL, "The http received message to updateApplication is %+v", req)
-
+	//confirm the chat belongs to an app
 	a := &db.Application{}
-
-	err = server.dBWrapper.UpdateApplicationByToken(a, req.Name, appToken).Error
+	err := server.dBWrapper.GetApplicationByToken(a, appToken).Error
 
 	if err != nil {
-		failure(w, r, http.StatusBadRequest, err.Error())
-		logger.LogError(logger.SERVER, logger.ESSENTIAL, "Unable to updateApplication with error %v", err)
+		failure(w, r, http.StatusBadRequest, "application token incorrect")
 		return
 	}
 
-	res := &UpdateApplicationRes{}
-	success(w, r, res, logger.ESSENTIAL)
+	c := &db.Chat{
+		Common:            db.MakeNewCommon(),
+		Application_token: appToken,
+		Number:            req.Name,
+		Messages_count:    0,
+	}
+
+	server.Mq.Publish(q.ENTITIES_QUEUE)
+
+	//success(w, r, res, logger.ESSENTIAL)
 }

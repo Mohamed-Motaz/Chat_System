@@ -1,5 +1,7 @@
 package Database
 
+import "gorm.io/gorm"
+
 type Chat struct {
 	Common
 	Application_token string `gorm:"column:application_token"  json:"application_token"`
@@ -9,4 +11,12 @@ type Chat struct {
 
 func (Chat) TableName() string {
 	return "chats"
+}
+
+func (db *DBWrapper) InsertChat(c *Chat) *gorm.DB {
+	return db.Db.Create(c)
+}
+
+func (db *DBWrapper) UpdateChat(c *Chat) *gorm.DB {
+	return db.Db.Save(c)
 }

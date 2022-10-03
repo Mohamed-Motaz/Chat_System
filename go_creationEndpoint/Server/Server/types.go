@@ -2,6 +2,7 @@ package Server
 
 import (
 	db "Server/Database"
+	q "Server/MessageQueue"
 	utils "Server/Utils"
 
 	"log"
@@ -12,6 +13,7 @@ import (
 
 type Server struct {
 	dBWrapper *db.DBWrapper
+	Mq        q.MQ
 }
 
 const (

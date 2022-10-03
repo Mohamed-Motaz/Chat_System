@@ -3,6 +3,7 @@ package Server
 import (
 	db "Server/Database"
 	logger "Server/Logger"
+	q "Server/MessageQueue"
 
 	"net/http"
 
@@ -14,6 +15,7 @@ func NewServer() (*Server, error) {
 
 	server := &Server{
 		dBWrapper: db.New(),
+		Mq:        *q.New("amqp://" + q.MqUsername + ":" + q.MqPassword + "@" + q.MqHost + ":" + q.MqPort + "/"),
 	}
 	r := mux.NewRouter()
 	registerRoutes(r, server)
@@ -24,8 +26,7 @@ func NewServer() (*Server, error) {
 }
 
 func registerRoutes(r *mux.Router, s *Server) {
-	r.HandleFunc("/api/v1/applications", s.addApplication)
-	r.HandleFunc("/api/v1/applications/{appToken}", s.updateApplication)
+	r.HandleFunc("/api/v1/applications/{appToken}/chats", s.addChat).Methods("POST")
 
 }
 

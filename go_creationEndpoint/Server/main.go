@@ -17,7 +17,7 @@ func main() {
 	utils.InitDirectories(LOG_FOLDER)
 	logger.InitLogger(LOG_FOLDER)
 
-	_, err := s.NewServer()
+	s, err := s.NewServer()
 	if err != nil {
 		logger.FailOnError(logger.SERVER, logger.ESSENTIAL, "Error while creating server %v", err)
 	}
@@ -26,5 +26,6 @@ func main() {
 	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
 	sig := <-signalCh //block until user exits
-	logger.LogInfo(logger.SERVER, logger.ESSENTIAL, "Received a quit sig %+v\nGoodbye", sig)
+	logger.LogInfo(logger.SERVER, logger.ESSENTIAL, "Received a quit sig %+v\nCleaning up resources. Goodbye", sig)
+	s.Mq.Close()
 }
