@@ -4,6 +4,7 @@ import (
 	db "Server/Database"
 	logger "Server/Logger"
 	q "Server/MessageQueue"
+	c "Server/RedisCache"
 
 	"net/http"
 
@@ -15,7 +16,8 @@ func NewServer() (*Server, error) {
 
 	server := &Server{
 		dBWrapper: db.New(),
-		Mq:        *q.New("amqp://" + q.MqUsername + ":" + q.MqPassword + "@" + q.MqHost + ":" + q.MqPort + "/"),
+		Mq:        q.New("amqp://" + q.MqUsername + ":" + q.MqPassword + "@" + q.MqHost + ":" + q.MqPort + "/"),
+		cache:     c.New(c.CacheHost + ":" + c.CachePort),
 	}
 	r := mux.NewRouter()
 	registerRoutes(r, server)

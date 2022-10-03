@@ -3,6 +3,7 @@ package MessageQueue
 import (
 	logger "Server/Logger"
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -23,13 +24,17 @@ func New(amqpAddr string) *MQ {
 		qMap: make(map[string]*amqp.Queue),
 		mu:   sync.Mutex{},
 	}
+
 	//try to reconnect and sleep 2 seconds on failure
-	var err error
+	var err error = fmt.Errorf("error")
 	ctr := 0
+
 	for ctr < 3 && err != nil {
 		err = mq.connect(amqpAddr)
 		ctr++
-		time.Sleep(time.Second * 10)
+		if err != nil {
+			time.Sleep(time.Second * 10)
+		}
 	}
 
 	if err != nil {

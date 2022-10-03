@@ -3,7 +3,6 @@ package Server
 import (
 	db "Server/Database"
 	logger "Server/Logger"
-	q "Server/MessageQueue"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -84,14 +83,14 @@ func (server *Server) addChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := &db.Chat{
-		Common:            db.MakeNewCommon(),
-		Application_token: appToken,
-		Number:            req.Name,
-		Messages_count:    0,
-	}
+	// c := &db.Chat{
+	// 	Common:            db.MakeNewCommon(),
+	// 	Application_token: appToken,
+	// 	Number:            req.Name,
+	// 	Messages_count:    0,
+	// }
 
-	server.Mq.Publish(q.ENTITIES_QUEUE)
+	// server.Mq.Publish(q.ENTITIES_QUEUE)
 
 	//success(w, r, res, logger.ESSENTIAL)
 }

@@ -3,6 +3,8 @@ package Server
 import (
 	db "Server/Database"
 	q "Server/MessageQueue"
+	c "Server/RedisCache"
+
 	utils "Server/Utils"
 
 	"log"
@@ -13,7 +15,8 @@ import (
 
 type Server struct {
 	dBWrapper *db.DBWrapper
-	Mq        q.MQ
+	Mq        *q.MQ
+	cache     *c.Cache
 }
 
 const (
@@ -24,7 +27,6 @@ const (
 
 var MyHost string
 var MyPort string
-var DebugEnv int16
 
 func init() {
 	err := godotenv.Load("config.env")
