@@ -5,7 +5,6 @@ import (
 	utils "Server/Utils"
 
 	"log"
-	"net/http"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -13,7 +12,6 @@ import (
 
 type Server struct {
 	dBWrapper *db.DBWrapper
-	handler   http.Handler //custom handler that logs requests
 }
 
 const (
