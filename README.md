@@ -12,7 +12,7 @@ A very complex design decision is maintaining the counter. The corner case that 
 
 In the chats table, I chose the foreign key to be on the application_token, rather than the application_id. This was a hard choice. Pros: Only 1 query to get the applications chat. Cons: Indexing a varchar, which means that the index may grow in size quite a bit in the future. Comparing varchars is indeed slower than ints, but if I opt for using the application_id, the first query would still have to compare tokens to use the index. So it makes more sense to decrease the queries sent to the db which may already be under alot of load due to the messages.
 
-
+When updating an app, I simply perform the update based on the given token, rather than first checking if it exists. The reasoning here is also to decrease the number of round trips to the db, although this comes at the price that the user receives an ugly error when updating an app with an incorrect token.
 
 Schema
 
