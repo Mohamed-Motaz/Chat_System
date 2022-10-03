@@ -9,7 +9,7 @@ import (
 )
 
 type DBWrapper struct {
-	db *gorm.DB
+	Db *gorm.DB
 }
 
 const SCHEMA_NAME = "instabug"
@@ -18,12 +18,12 @@ const SCHEMA_NAME = "instabug"
 //by multiple goroutines
 func New() *DBWrapper {
 	db := connect()
-	// setUp(db)
 	logger.LogInfo(logger.DATABASE, logger.ESSENTIAL, "Db setup complete")
-	return &DBWrapper{
-		db: db,
+	wrapper := &DBWrapper{
+		Db: db,
 	}
-
+	wrapper.ApplyMigrations()
+	return wrapper
 }
 
 func connect() *gorm.DB {
