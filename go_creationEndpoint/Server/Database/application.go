@@ -16,7 +16,7 @@ func (Application) TableName() string {
 }
 
 func (db *DBWrapper) GetApplicationByToken(a *Application, token string) *gorm.DB {
-	return db.Db.Raw("SELECT * FROM instabug.applications WHERE token = ?", token).Scan(a)
+	return db.Db.Raw("SELECT * FROM instabug.applications WHERE token = ? LIMIT 1", token).Scan(a)
 }
 
 func (db *DBWrapper) UpdateApplicationByToken(a *Application, name, token string) *gorm.DB {

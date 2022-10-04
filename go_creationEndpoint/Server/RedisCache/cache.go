@@ -46,7 +46,7 @@ func (cache *Cache) Get(key string) (string, error) {
 	return cache.client.Get(cache.ctx, key).Result()
 }
 
-func (cache *Cache) Set(key string, value bool, ttl time.Duration) error {
+func (cache *Cache) Set(key string, value int, ttl time.Duration) error {
 	return cache.client.Set(cache.ctx, key, value, ttl).Err()
 }
 
@@ -58,6 +58,11 @@ func (cache *Cache) MakeChatCacheKey(appToken string) string {
 //for setting the key for the number of a specific message, format is {APP_TOKEN}.CHAT.{CHAT_NUM}
 func (cache *Cache) MakeMessageCacheKey(appToken string, chatNum int) string {
 	return fmt.Sprintf("%s.%d", cache.MakeChatCacheKey(appToken), chatNum)
+}
+
+//for setting the key for the number of a specific message, format is {APP_TOKEN}.CHAT.{CHAT_NUM}.CHAT_ID
+func (cache *Cache) MakeMessageChatIdCacheKey(appToken string, chatNum int) string {
+	return fmt.Sprintf("%s.%d.CHAT_ID", cache.MakeChatCacheKey(appToken), chatNum)
 }
 
 func (cache *Cache) debug() {
