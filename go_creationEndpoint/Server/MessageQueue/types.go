@@ -52,9 +52,11 @@ var MqUsername string
 var MqPassword string
 
 func init() {
-	err := godotenv.Load("config.env")
-	if err != nil {
-		log.Fatal("Error loading config.env file")
+	if !utils.IN_DOCKER {
+		err := godotenv.Load("config.env")
+		if err != nil {
+			log.Fatal("Error loading config.env file")
+		}
 	}
 	MqHost = strings.Replace(utils.GetEnv(MQ_HOST, LOCAL_HOST), "_", ".", -1) //replace all "_" with ".""
 	MqPort = utils.GetEnv(MQ_PORT, "5672")

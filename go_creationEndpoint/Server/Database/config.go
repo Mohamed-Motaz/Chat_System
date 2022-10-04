@@ -26,9 +26,11 @@ var DbPort string
 var DbSettings string
 
 func init() {
-	err := godotenv.Load("config.env")
-	if err != nil {
-		log.Fatal("Error loading config.env file")
+	if !utils.IN_DOCKER {
+		err := godotenv.Load("config.env")
+		if err != nil {
+			log.Fatal("Error loading config.env file")
+		}
 	}
 	DbUser = utils.GetEnv(DB_USER, "root")
 	DbPassword = utils.GetEnv(DB_PASSWORD, "instabug")

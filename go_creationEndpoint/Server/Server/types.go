@@ -29,9 +29,11 @@ var MyHost string
 var MyPort string
 
 func init() {
-	err := godotenv.Load("config.env")
-	if err != nil {
-		log.Fatal("Error loading config.env file")
+	if !utils.IN_DOCKER {
+		err := godotenv.Load("config.env")
+		if err != nil {
+			log.Fatal("Error loading config.env file")
+		}
 	}
 	MyHost = strings.Replace(utils.GetEnv(MY_HOST, LOCAL_HOST), "_", ".", -1) //replace all "_" with ".""
 	MyPort = utils.GetEnv(MY_PORT, "5555")
