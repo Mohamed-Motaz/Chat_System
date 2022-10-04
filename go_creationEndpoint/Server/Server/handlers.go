@@ -63,13 +63,11 @@ func (server *Server) addChat(w http.ResponseWriter, r *http.Request) {
 		Messages_count:    0,
 	}
 
-	toPublish := new(bytes.Buffer)
-	err = json.NewEncoder(toPublish).Encode(c)
+	toPublish, err := server.makeChatMqEntity(w, r, q.INSERT_ACTION, c)
 	if err != nil {
-		failure(w, r, http.StatusInternalServerError, "Internal server error")
 		return
 	}
-	err = server.Mq.Publish(q.ENTITIES_QUEUE, toPublish.Bytes())
+	err = server.Mq.Publish(q.ENTITIES_QUEUE, toPublish)
 
 	if err != nil {
 		failure(w, r, http.StatusInternalServerError, "Internal server error")
@@ -174,13 +172,11 @@ func (server *Server) addMessage(w http.ResponseWriter, r *http.Request) {
 		Body:    req.Body,
 	}
 
-	toPublish := new(bytes.Buffer)
-	err = json.NewEncoder(toPublish).Encode(m)
+	toPublish, err := server.makeMessageMqEntity(w, r, q.INSERT_ACTION, m)
 	if err != nil {
-		failure(w, r, http.StatusInternalServerError, "Internal server error")
 		return
 	}
-	err = server.Mq.Publish(q.ENTITIES_QUEUE, toPublish.Bytes())
+	err = server.Mq.Publish(q.ENTITIES_QUEUE, toPublish)
 
 	if err != nil {
 		failure(w, r, http.StatusInternalServerError, "Internal server error")
@@ -229,4 +225,70 @@ func (server *Server) confirmChatNumberInDb(w http.ResponseWriter, r *http.Reque
 		return 0, fmt.Errorf("application token or chat incorrect")
 	}
 	return c.Id, nil
+}
+
+func (server *Server) makeChatMqEntity(w http.ResponseWriter, r *http.Request, action q.DB_ACTION, chat *db.Chat) ([]byte, error) {
+	c := q.Chat{
+		Id:                chat.Id,
+		Application_token: chat.Application_token,
+		Number:            chat.Number,
+		Messages_count:    chat.Messages_count,
+		Created_at:        chat.Created_at,
+		Updated_at:        chat.Updated_at,
+	}
+
+	cBytes := new(bytes.Buffer)
+	err := json.NewEncoder(cBytes).Encode(c)
+	if err != nil {
+		failure(w, r, http.StatusInternalServerError, "Internal server error")
+		return nil, err
+	}
+
+	obj := q.TransferObj{
+		Action:  action,
+		ObjType: q.MESSAGE,
+		Bytes:   cBytes.Bytes(),
+	}
+
+	resBytes := new(bytes.Buffer)
+	err = json.NewEncoder(resBytes).Encode(obj)
+	if err != nil {
+		failure(w, r, http.StatusInternalServerError, "Internal server error")
+		return nil, err
+	}
+
+	return resBytes.Bytes(), nil
+}
+
+func (server *Server) makeMessageMqEntity(w http.ResponseWriter, r *http.Request, action q.DB_ACTION, message *db.Message) ([]byte, error) {
+	m := q.Message{
+		Id:         message.Id,
+		Chat_id:    message.Chat_id,
+		Number:     message.Number,
+		Body:       message.Body,
+		Created_at: message.Created_at,
+		Updated_at: message.Updated_at,
+	}
+
+	mBytes := new(bytes.Buffer)
+	err := json.NewEncoder(mBytes).Encode(m)
+	if err != nil {
+		failure(w, r, http.StatusInternalServerError, "Internal server error")
+		return nil, err
+	}
+
+	obj := q.TransferObj{
+		Action:  action,
+		ObjType: q.MESSAGE,
+		Bytes:   mBytes.Bytes(),
+	}
+
+	resBytes := new(bytes.Buffer)
+	err = json.NewEncoder(resBytes).Encode(obj)
+	if err != nil {
+		failure(w, r, http.StatusInternalServerError, "Internal server error")
+		return nil, err
+	}
+
+	return resBytes.Bytes(), nil
 }

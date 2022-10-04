@@ -1,7 +1,6 @@
 package MessageQueue
 
 import (
-	db "Worker/Database"
 	utils "Worker/Utils"
 	"log"
 	"strings"
@@ -13,7 +12,23 @@ import (
 )
 
 //queue names
-const ENTITIES_QUEUE = "entitiesQueue"
+const (
+	ENTITIES_QUEUE string = "entitiesQueue"
+)
+
+type DB_ACTION string
+
+const (
+	INSERT_ACTION DB_ACTION = "insert"
+	UPDATE_ACTION DB_ACTION = "update"
+)
+
+type OBJ_TYPE string
+
+const (
+	CHAT    OBJ_TYPE = "chat"
+	MESSAGE OBJ_TYPE = "message"
+)
 
 type MQ struct {
 	conn *amqp.Connection
@@ -22,20 +37,29 @@ type MQ struct {
 	mu   sync.Mutex
 }
 
-//objects passed into the messageQ
+//object passed into the messageQ
+type TransferObj struct {
+	Action  DB_ACTION `json:"action"`
+	ObjType OBJ_TYPE  `json:"objType"`
+	Bytes   []byte    `json:"bytes"`
+}
 
 type Chat struct {
-	db.Chat
-	Id         int       `gorm:"primaryKey; column:id"   json:"id"`
-	Created_at time.Time `gorm:"column:created_at"       json:"created_at"`
-	Updated_at time.Time `gorm:"column:updated_at"       json:"updated_at"`
+	Id                int       `json:"id"`
+	Application_token string    `json:"application_token"`
+	Number            int32     `json:"number"`
+	Messages_count    int32     `json:"messages_count"`
+	Created_at        time.Time `json:"created_at"`
+	Updated_at        time.Time `json:"updated_at"`
 }
 
 type Message struct {
-	db.Message
-	Id         int       `gorm:"primaryKey; column:id"   json:"id"`
-	Created_at time.Time `gorm:"column:created_at"       json:"created_at"`
-	Updated_at time.Time `gorm:"column:updated_at"       json:"updated_at"`
+	Id         int       `json:"id"`
+	Chat_id    int32     `json:"chat_id"`
+	Number     int32     `json:"number"`
+	Body       string    `json:"body"`
+	Created_at time.Time `json:"created_at"`
+	Updated_at time.Time `json:"updated_at"`
 }
 
 const (
