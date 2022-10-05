@@ -14,6 +14,68 @@ In the chats table, I chose the foreign key to be on the application_token, rath
 
 When updating an app, I simply perform the update based on the given token, rather than first checking if it exists. The reasoning here is also to decrease the number of round trips to the db, although this comes at the price that the user receives an ugly error when updating an app with an incorrect token.
 
+More bottlenecks: 
+  When sending all the numbers to be updated in bulk to the server, we need to make sure that the operation isn't blocking. Thus we use the iterator, rather than load the complete Result in memory which would block.
+  When the worker is pulling from the queue, I don't ack until I am finished with the db operations. This is a huge bottleneck and a solution might be to immediately log an entity when receiving from the queue, then immediately ack the queue so I don't block other workers.
+  
+  
+  
+API calls
+
+POST localhost:3000/api/v1/applications
+body {
+  "name": "app1"
+}
+result {
+"name": "app1",
+"token": "4e963ef6-061c-40fc-841c-36e67cd3b77d",
+"chats_count": 0
+}
+
+PUT localhost:3000/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d
+body {
+"name": "new name for app1"
+}
+result {
+  "success": "ok"
+}
+
+GET localhost:3000/api/v1/applications/
+result [
+  {
+    "name": "new name for app1",
+    "token": "4e963ef6-061c-40fc-841c-36e67cd3b77d",
+    "chats_count": 0
+  }
+]
+ 
+GET localhost:3000/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d
+result
+{
+  "name": "new name for app1",
+  "token": "4e963ef6-061c-40fc-841c-36e67cd3b77d",
+  "chats_count": 0
+}
+
+
+
+POST localhost:5555/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats
+body -- no body
+result {
+  "number": 1
+}
+
+
+POST localhost:5555/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/1/messages
+body {
+  "body": "message 1 for chat 1 in app 1"
+}
+
+PUT localhost:5555/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/1/messages/1
+body {
+  "body": "new message 1 for chat 1 in app 1"
+}
+  
 Schema
 
 Applications				//persisted immediately
