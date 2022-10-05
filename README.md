@@ -14,6 +14,14 @@ In the chats table, I chose the foreign key to be on the application_token, rath
 
 When updating an app, I simply perform the update based on the given token, rather than first checking if it exists. The reasoning here is also to decrease the number of round trips to the db, although this comes at the price that the user receives an ugly error when updating an app with an incorrect token.
 
+More bottlenecks: 
+  When sending all the numbers to be updated in bulk to the server, we need to make sure that the operation isn't blocking. Thus we use the iterator, rather than load the complete Result in memory which would block.
+  When the worker is pulling from the queue, I don't ack until I am finished with the db operations. This is a huge bottleneck and a solution might be to immediately log an entity when receiving from the queue, then immediately ack the queue so I don't block other workers.
+  
+  
+  
+  
+  
 Schema
 
 Applications				//persisted immediately
