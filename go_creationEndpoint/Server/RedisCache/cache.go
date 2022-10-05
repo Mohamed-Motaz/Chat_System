@@ -34,6 +34,14 @@ func New(cacheAddr string) *Cache {
 	return cache
 }
 
+func (cache *Cache) GetCacheCtx() context.Context {
+	return cache.ctx
+}
+
+func (cache *Cache) GetKeysWithPatternIterator(pattern string) *redis.ScanIterator {
+	return cache.client.Scan(cache.ctx, 0, pattern, 0).Iterator()
+}
+
 func (cache *Cache) Incr(key string) (int64, error) {
 	return cache.client.Incr(cache.ctx, key).Result()
 }
@@ -50,19 +58,19 @@ func (cache *Cache) Set(key string, value int, ttl time.Duration) error {
 	return cache.client.Set(cache.ctx, key, value, ttl).Err()
 }
 
-//for setting the key for the number of a specific chat, format is {APP_TOKEN}.CHAT
+//for setting the key for the number of a specific chat, format is APP_TOKEN:{token}.CHAT_CTR
 func (cache *Cache) MakeChatCtrForAppCacheKey(appToken string) string {
-	return fmt.Sprintf("%s.CHAT", appToken)
+	return fmt.Sprintf("APP_TOKEN:%s.CHAT_CTR", appToken)
 }
 
-//for setting the key for the number of a specific message, format is {APP_TOKEN}.CHAT.{CHAT_NUM}
+//for setting the key for the number of a specific message, format is APP_TOKEN:{token}--CHAT_NUM:{chatNum}.MESSAGE_CTR
 func (cache *Cache) MakeMessageCtrForChatCacheKey(appToken string, chatNum int) string {
-	return fmt.Sprintf("%s.%d", cache.MakeChatCtrForAppCacheKey(appToken), chatNum)
+	return fmt.Sprintf("APP_TOKEN:%s--CHAT_NUM:%d.MESSAGE_CTR", appToken, chatNum)
 }
 
-//for setting the key for the number of a specific message, format is {APP_TOKEN}.CHAT.{CHAT_NUM}.CHAT_ID
+//for setting the key for the number of a specific message, format is APP_TOKEN:{token}--CHAT_NUM:{chatNum}.CHAT_ID
 func (cache *Cache) MakeChatIdForChatNumCacheKey(appToken string, chatNum int) string {
-	return fmt.Sprintf("%s.%d.CHAT_ID", cache.MakeChatCtrForAppCacheKey(appToken), chatNum)
+	return fmt.Sprintf("APP_TOKEN:%s--CHAT_NUM:%d.CHAT_ID", appToken, chatNum)
 }
 
 func (cache *Cache) debug() {
@@ -79,7 +87,7 @@ func (cache *Cache) debug() {
 		}
 		fmt.Println("\nDone printing all redis keys and vals\n")
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(20 * time.Second)
 	}
 
 }

@@ -14,3 +14,8 @@ type AddMessageRes struct {
 type UpdateMessageReq struct {
 	Body string `json:"body"`
 }
+
+type UpdateMessageRes struct {
+	Number int32  `json:"number"`
+	Body   string `json:"body"`
+}

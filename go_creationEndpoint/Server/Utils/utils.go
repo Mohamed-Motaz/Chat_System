@@ -3,6 +3,7 @@ package utils
 import (
 	"log"
 	"os"
+	"strings"
 )
 
 const IN_DOCKER bool = false
@@ -16,6 +17,21 @@ func InitDirectories(dataFolder string) {
 	}
 
 	log.Printf("Done initializing directories\n\n")
+}
+
+// GetStringInBetween Returns empty string if no start string found
+func GetStringInBetween(str string, start string, end string) (result string) {
+	s := strings.Index(str, start)
+	if s == -1 {
+		return result
+	}
+	newS := str[s+len(start):]
+	e := strings.Index(newS, end)
+	if e == -1 {
+		return result
+	}
+	result = newS[:e]
+	return result
 }
 
 func GetEnv(key, fallback string) string {

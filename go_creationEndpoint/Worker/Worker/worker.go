@@ -58,6 +58,7 @@ func (worker *Worker) qConsumer() {
 }
 
 func (worker *Worker) doWork(obj *q.TransferObj) {
+	logger.LogInfo(logger.WORKER, logger.ESSENTIAL, "The transfer obj received %+v", obj)
 	if obj.Action == q.INSERT_ACTION {
 		switch obj.ObjType {
 		case q.CHAT:
@@ -106,6 +107,32 @@ func (worker *Worker) doWork(obj *q.TransferObj) {
 			err = worker.dBWrapper.UpdateMessage(message).Error
 			if err != nil {
 				logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to update message with error %v", err)
+				return
+			}
+		case q.CHATS_CTR:
+			chatsCtr := &q.ChatsCtr{}
+			err := json.Unmarshal(obj.Bytes, chatsCtr)
+			fmt.Printf("This is the data received %+v\n", chatsCtr)
+			if err != nil {
+				logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to parse request to update the chats ctr %v\nwith error %v", string(obj.Bytes), err)
+				return
+			}
+			err = worker.dBWrapper.UpdateApplicationCtr(chatsCtr.Token, int(chatsCtr.Chats_count), time.Now()).Error
+			if err != nil {
+				logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to update the chats ctr with error %v", err)
+				return
+			}
+		case q.MESSAGES_CTR:
+			messageCtr := &q.MessagesCtr{}
+			err := json.Unmarshal(obj.Bytes, messageCtr)
+			fmt.Printf("This is the data received %+v\n", messageCtr)
+			if err != nil {
+				logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to parse request to update the messages ctr %v\nwith error %v", string(obj.Bytes), err)
+				return
+			}
+			err = worker.dBWrapper.UpdateChatsCtr(messageCtr.Application_token, int(messageCtr.Number), int(messageCtr.Messages_count), time.Now()).Error
+			if err != nil {
+				logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to update the messages ctr with error %v", err)
 				return
 			}
 		}

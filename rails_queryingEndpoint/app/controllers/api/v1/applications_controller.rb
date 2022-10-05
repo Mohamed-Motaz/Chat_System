@@ -18,8 +18,14 @@ module Api
                     @res = Application.find_by_sql("
                         SELECT name, token, chats_count 
                         FROM instabug.applications
-                        WHERE token = '#{@token}'")
-                    render json: @res.as_json(only: [:name, :token, :chats_count]), status: :ok
+                        WHERE token = '#{@token}'
+                        LIMIT 1")
+
+                    if @res.length > 0
+                        render json: @res[0].as_json(only: [:name, :token, :chats_count]), status: :ok
+                    else
+                        render json: {error: "Invalid token entered"} , status: :bad_request
+                    end
                 end
             end
 

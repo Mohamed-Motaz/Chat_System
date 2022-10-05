@@ -319,8 +319,9 @@ func (server *Server) updateMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := &AddEntityRes{
-		Number: m.Number,
+	res := &UpdateMessageRes{
+		Number: int32(messageNum),
+		Body:   req.Body,
 	}
 
 	success(w, r, res, logger.ESSENTIAL)

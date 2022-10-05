@@ -26,8 +26,10 @@ const (
 type OBJ_TYPE string
 
 const (
-	CHAT    OBJ_TYPE = "chat"
-	MESSAGE OBJ_TYPE = "message"
+	CHAT         OBJ_TYPE = "chat"
+	MESSAGE      OBJ_TYPE = "message"
+	CHATS_CTR    OBJ_TYPE = "chatsCtr"
+	MESSAGES_CTR OBJ_TYPE = "messageCtr"
 )
 
 type MQ struct {
@@ -60,6 +62,17 @@ type Message struct {
 	Body       string    `json:"body"`
 	Created_at time.Time `json:"created_at"`
 	Updated_at time.Time `json:"updated_at"`
+}
+
+type ChatsCtr struct {
+	Token       string `json:"token"`
+	Chats_count int32  `json:"chats_count"`
+}
+
+type MessagesCtr struct {
+	Application_token string `gorm:"column:application_token"  json:"application_token"`
+	Number            int32  `gorm:"column:number"             json:"number"`
+	Messages_count    int32  `gorm:"column:messages_count"     json:"messages_count"`
 }
 
 const (

@@ -1,6 +1,10 @@
 package Database
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Chat struct {
 	Common
@@ -13,10 +17,13 @@ func (Chat) TableName() string {
 	return "instabug.chats"
 }
 
-func (db *DBWrapper) GetChatByAppTokenAndNumber(c *Chat, token string, chatNum int) *gorm.DB {
-	return db.Db.Raw(`SELECT * FROM instabug.chats 
-					  WHERE application_token = ?
-					  AND number = ? LIMIT 1`, token, chatNum).Scan(c)
+func (db *DBWrapper) UpdateChatsCtr(token string, number int, messagesCount int, updatedAt time.Time) *gorm.DB {
+	return db.Db.Exec(
+		`
+		UPDATE instabug.chats
+		SET messages_count = ?, updated_at = ? 
+		WHERE application_token = ? and number = ?
+		`, messagesCount, updatedAt, token, number)
 }
 
 func (db *DBWrapper) InsertChat(c *Chat) *gorm.DB {
