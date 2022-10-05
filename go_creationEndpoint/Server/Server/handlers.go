@@ -106,7 +106,7 @@ func (server *Server) addMessage(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	appToken, ok := vars["appToken"]
-	if !ok {
+	if !ok || len(strings.TrimSpace(appToken)) == 0 {
 		failure(w, r, http.StatusBadRequest, "application token is missing")
 		return
 	}
@@ -159,15 +159,21 @@ func (server *Server) addMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chatId, err := server.cache.Incr(chatIdCacheKey)
+	chatId, err := server.cache.Get(chatIdCacheKey)
 	if err != nil {
 		failure(w, r, http.StatusInternalServerError, "Caching layer is down")
 		return
 	}
 
+	cId, err := strconv.Atoi(chatId)
+	if err != nil {
+		failure(w, r, http.StatusInternalServerError, "Issue while retrieving data from cache")
+		return
+	}
+
 	m := &db.Message{
 		Common:  db.MakeNewCommon(),
-		Chat_id: int32(chatId),
+		Chat_id: int32(cId),
 		Number:  int32(number),
 		Body:    req.Body,
 	}
@@ -212,19 +218,19 @@ func (server *Server) confirmAppTokenInDb(w http.ResponseWriter, r *http.Request
 //confirm the chat number is indeed in the db and return its id
 func (server *Server) confirmChatNumberInDb(w http.ResponseWriter, r *http.Request, appToken string, chatNum int) (int, error) {
 	logger.LogInfo(logger.DATABASE, logger.NON_ESSENTIAL, "About to confirm this app token %+v", appToken)
-	c := &db.Chat{}
-	err := server.dBWrapper.GetChatByAppTokenAndNumber(c, appToken, chatNum).Error
+	id := 0
+	err := server.dBWrapper.GetChatIdByAppTokenAndNumber(&id, appToken, chatNum).Error
 
 	if err != nil {
 		failure(w, r, http.StatusInternalServerError, "Database is down")
 		return 0, fmt.Errorf("database is down")
 	}
 
-	if c.Id == 0 {
+	if id == 0 {
 		failure(w, r, http.StatusBadRequest, "application token or chat number incorrect")
 		return 0, fmt.Errorf("application token or chat incorrect")
 	}
-	return c.Id, nil
+	return id, nil
 }
 
 func (server *Server) makeChatMqEntity(w http.ResponseWriter, r *http.Request, action q.DB_ACTION, chat *db.Chat) ([]byte, error) {
@@ -246,7 +252,7 @@ func (server *Server) makeChatMqEntity(w http.ResponseWriter, r *http.Request, a
 
 	obj := q.TransferObj{
 		Action:  action,
-		ObjType: q.MESSAGE,
+		ObjType: q.CHAT,
 		Bytes:   cBytes.Bytes(),
 	}
 

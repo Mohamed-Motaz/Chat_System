@@ -8,7 +8,7 @@ services:
     ports:
       - 6379:6379
     volumes:
-      - ~/docker-conf/local/redis/data/:/data
+      - ~/docker-conf/redis/data/:/data
       - ./go_creationEndpoint/Server/RedisCache/redis.conf:/usr/local/etc/redis/redis.conf
   rabbitmq:
     image: rabbitmq:3-management-alpine

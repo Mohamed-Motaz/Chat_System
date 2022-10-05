@@ -1,5 +1,7 @@
 package Database
 
+import "gorm.io/gorm"
+
 type Message struct {
 	Common
 	Chat_id int32  `gorm:"column:chat_id"       json:"chat_id"`
@@ -8,5 +10,13 @@ type Message struct {
 }
 
 func (Message) TableName() string {
-	return "messages"
+	return "instabug.messages"
+}
+
+func (db *DBWrapper) InsertMessage(m *Message) *gorm.DB {
+	return db.Db.Create(m)
+}
+
+func (db *DBWrapper) UpdateMessage(m *Message) *gorm.DB {
+	return db.Db.Save(m)
 }

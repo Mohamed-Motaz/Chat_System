@@ -13,10 +13,10 @@ func (Chat) TableName() string {
 	return "chats"
 }
 
-func (db *DBWrapper) GetChatByAppTokenAndNumber(c *Chat, token string, chatNum int) *gorm.DB {
-	return db.Db.Raw(`SELECT * FROM instabug.chats 
+func (db *DBWrapper) GetChatIdByAppTokenAndNumber(id *int, token string, chatNum int) *gorm.DB {
+	return db.Db.Raw(`SELECT id FROM instabug.chats 
 					  WHERE application_token = ?
-					  AND number = ? LIMIT 1`, token, chatNum).Scan(c)
+					  AND number = ? LIMIT 1`, token, chatNum).Scan(id)
 }
 
 func (db *DBWrapper) InsertChat(c *Chat) *gorm.DB {

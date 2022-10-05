@@ -10,7 +10,7 @@ type Chat struct {
 }
 
 func (Chat) TableName() string {
-	return "chats"
+	return "instabug.chats"
 }
 
 func (db *DBWrapper) GetChatByAppTokenAndNumber(c *Chat, token string, chatNum int) *gorm.DB {
