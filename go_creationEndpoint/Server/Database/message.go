@@ -1,5 +1,7 @@
 package Database
 
+import "gorm.io/gorm"
+
 type Message struct {
 	Common
 	Chat_id int32  `gorm:"column:chat_id"       json:"chat_id"`
@@ -8,5 +10,11 @@ type Message struct {
 }
 
 func (Message) TableName() string {
-	return "messages"
+	return "instabug.messages"
+}
+
+func (db *DBWrapper) GetMessagedByChatIdAndNumber(id *int, chatId int, messageNum int) *gorm.DB {
+	return db.Db.Raw(`SELECT id FROM instabug.messages 
+					  WHERE chat_id = ?
+					  AND number = ? LIMIT 1`, chatId, messageNum).Scan(id)
 }

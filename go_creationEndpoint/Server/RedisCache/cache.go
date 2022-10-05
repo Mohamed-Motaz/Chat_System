@@ -51,18 +51,18 @@ func (cache *Cache) Set(key string, value int, ttl time.Duration) error {
 }
 
 //for setting the key for the number of a specific chat, format is {APP_TOKEN}.CHAT
-func (cache *Cache) MakeChatCacheKey(appToken string) string {
+func (cache *Cache) MakeChatCtrForAppCacheKey(appToken string) string {
 	return fmt.Sprintf("%s.CHAT", appToken)
 }
 
 //for setting the key for the number of a specific message, format is {APP_TOKEN}.CHAT.{CHAT_NUM}
-func (cache *Cache) MakeMessageCacheKey(appToken string, chatNum int) string {
-	return fmt.Sprintf("%s.%d", cache.MakeChatCacheKey(appToken), chatNum)
+func (cache *Cache) MakeMessageCtrForChatCacheKey(appToken string, chatNum int) string {
+	return fmt.Sprintf("%s.%d", cache.MakeChatCtrForAppCacheKey(appToken), chatNum)
 }
 
 //for setting the key for the number of a specific message, format is {APP_TOKEN}.CHAT.{CHAT_NUM}.CHAT_ID
-func (cache *Cache) MakeMessageChatIdCacheKey(appToken string, chatNum int) string {
-	return fmt.Sprintf("%s.%d.CHAT_ID", cache.MakeChatCacheKey(appToken), chatNum)
+func (cache *Cache) MakeChatIdForChatNumCacheKey(appToken string, chatNum int) string {
+	return fmt.Sprintf("%s.%d.CHAT_ID", cache.MakeChatCtrForAppCacheKey(appToken), chatNum)
 }
 
 func (cache *Cache) debug() {

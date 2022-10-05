@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
@@ -29,7 +30,7 @@ func (server *Server) addChat(w http.ResponseWriter, r *http.Request) {
 
 	//check if the token is indeed in cache
 	//if not, call the db once and confirm its presence
-	cacheKey := server.cache.MakeChatCacheKey(appToken)
+	cacheKey := server.cache.MakeChatCtrForAppCacheKey(appToken)
 	_, err := server.cache.Get(cacheKey)
 
 	if err != nil {
@@ -71,7 +72,7 @@ func (server *Server) addChat(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		failure(w, r, http.StatusInternalServerError, "Internal server error")
-		server.cache.Decr(server.cache.MakeChatCacheKey(appToken)) //if this returns an error, then should most probably log it
+		server.cache.Decr(server.cache.MakeChatCtrForAppCacheKey(appToken)) //if this returns an error, then should most probably log it
 		return
 	}
 
@@ -122,12 +123,12 @@ func (server *Server) addMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.LogInfo(logger.SERVER, logger.NON_ESSENTIAL, "The http received message to addMessage is %+v", nil)
+	logger.LogInfo(logger.SERVER, logger.NON_ESSENTIAL, "The http received message to addMessage is %+v", req)
 
 	//check if the token and chat number is indeed in cache
 	//if not, call the db once and confirm its presence
-	cacheKey := server.cache.MakeMessageCacheKey(appToken, chatNum)
-	chatIdCacheKey := server.cache.MakeMessageChatIdCacheKey(appToken, chatNum)
+	cacheKey := server.cache.MakeMessageCtrForChatCacheKey(appToken, chatNum)
+	chatIdCacheKey := server.cache.MakeChatIdForChatNumCacheKey(appToken, chatNum)
 
 	_, err = server.cache.Get(cacheKey)
 
@@ -186,7 +187,135 @@ func (server *Server) addMessage(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		failure(w, r, http.StatusInternalServerError, "Internal server error")
-		server.cache.Decr(server.cache.MakeChatCacheKey(appToken)) //if this returns an error, then should most probably log it
+		server.cache.Decr(server.cache.MakeChatCtrForAppCacheKey(appToken)) //if this returns an error, then should most probably log it
+		return
+	}
+
+	res := &AddEntityRes{
+		Number: m.Number,
+	}
+
+	success(w, r, res, logger.ESSENTIAL)
+}
+
+func (server *Server) updateMessage(w http.ResponseWriter, r *http.Request) {
+
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		failure(w, r, http.StatusInternalServerError, "unable to read request")
+		return
+	}
+
+	req := &UpdateMessageReq{}
+	err = json.Unmarshal(b, req)
+	if err != nil {
+		logger.LogError(logger.SERVER, logger.ESSENTIAL, "Unable to parse request to updateMessage %v\nwith error %v", string(b), err)
+		failure(w, r, http.StatusBadRequest, "unable to martial request")
+		return
+	}
+	req.Body = strings.TrimSpace(req.Body)
+	if len(req.Body) == 0 {
+		logger.LogError(logger.SERVER, logger.ESSENTIAL, "No body in request to updateMessage %v", err)
+		failure(w, r, http.StatusBadRequest, "no valid body")
+		return
+	}
+
+	vars := mux.Vars(r)
+	appToken, ok := vars["appToken"]
+	if !ok || len(strings.TrimSpace(appToken)) == 0 {
+		failure(w, r, http.StatusBadRequest, "application token is missing")
+		return
+	}
+
+	cNum, ok := vars["chatNum"]
+	if !ok {
+		failure(w, r, http.StatusBadRequest, "chat number is missing")
+		return
+	}
+	chatNum, err := strconv.Atoi(cNum)
+	if err != nil {
+		failure(w, r, http.StatusBadRequest, "invalid chat number")
+		return
+	}
+
+	mNum, ok := vars["messageNum"]
+	if !ok {
+		failure(w, r, http.StatusBadRequest, "message number is missing")
+		return
+	}
+	messageNum, err := strconv.Atoi(mNum)
+	if err != nil {
+		failure(w, r, http.StatusBadRequest, "invalid message number")
+		return
+	}
+
+	logger.LogInfo(logger.SERVER, logger.NON_ESSENTIAL, "The http received message to updateMessage is %+v", req)
+
+	//check if the token and chat number is indeed in cache
+	//if not, call the db once and confirm its presence
+	chatIdCacheKey := server.cache.MakeChatIdForChatNumCacheKey(appToken, chatNum)
+
+	_, err = server.cache.Get(chatIdCacheKey)
+
+	if err != nil {
+		if err != redis.Nil {
+			failure(w, r, http.StatusInternalServerError, "Caching layer is down")
+			return
+		}
+
+		//so the key isn't present in cache. Now I need to call the db to confirm its presence
+		id, err := server.confirmChatNumberInDb(w, r, appToken, chatNum)
+		if err != nil {
+			return
+		}
+		//now i am sure this chat is indeed in the db, so I need to set this chat id in redis for faster access
+		err = server.cache.Set(chatIdCacheKey, id, 0)
+		if err != nil {
+			failure(w, r, http.StatusInternalServerError, "Caching layer is down")
+			return
+		}
+	}
+
+	chatId, err := server.cache.Get(chatIdCacheKey)
+	if err != nil {
+		failure(w, r, http.StatusInternalServerError, "Caching layer is down")
+		return
+	}
+
+	cId, err := strconv.Atoi(chatId)
+	if err != nil {
+		failure(w, r, http.StatusInternalServerError, "Issue while retrieving data from cache")
+		return
+	}
+
+	//now that I have the chatId, I need to check for the number and make sure it is indeed present
+	//I now have a choice, either check the cache (i need to first insert it when adding a message) or the db.
+	//it is probably up to the system design, but in this case, I don't want the cache to be my source of truth.
+	//I need to confirm the value is indeed in the db when updating. this way the client can retry updating multiple times
+	//if I fail to update, he can then try to re insert. but adding everything to the cache doesn't make sense, especially
+	//since I anticipate a high load of messages
+
+	mId, err := server.confirmMessageNumberInDb(w, r, cId, messageNum)
+	if err != nil {
+		return
+	}
+
+	m := &db.Message{
+		Common: db.Common{
+			Id:         mId,
+			Updated_at: time.Now(),
+		},
+		Body: req.Body,
+	}
+
+	toPublish, err := server.makeMessageMqEntity(w, r, q.UPDATE_ACTION, m)
+	if err != nil {
+		return
+	}
+	err = server.Mq.Publish(q.ENTITIES_QUEUE, toPublish)
+
+	if err != nil {
+		failure(w, r, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
@@ -229,6 +358,24 @@ func (server *Server) confirmChatNumberInDb(w http.ResponseWriter, r *http.Reque
 	if id == 0 {
 		failure(w, r, http.StatusBadRequest, "application token or chat number incorrect")
 		return 0, fmt.Errorf("application token or chat incorrect")
+	}
+	return id, nil
+}
+
+//confirm the message number is indeed in the db and return its id
+func (server *Server) confirmMessageNumberInDb(w http.ResponseWriter, r *http.Request, chatId int, messageNum int) (int, error) {
+	logger.LogInfo(logger.DATABASE, logger.NON_ESSENTIAL, "About to confirm this chatId %+v and messageNum %+v", chatId, messageNum)
+	id := 0
+	err := server.dBWrapper.GetMessagedByChatIdAndNumber(&id, chatId, messageNum).Error
+
+	if err != nil {
+		failure(w, r, http.StatusInternalServerError, "Database is down")
+		return 0, fmt.Errorf("database is down")
+	}
+
+	if id == 0 {
+		failure(w, r, http.StatusBadRequest, "chat id or message number incorrect")
+		return 0, fmt.Errorf("chat id or message number incorrect")
 	}
 	return id, nil
 }

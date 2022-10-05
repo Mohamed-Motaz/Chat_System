@@ -12,8 +12,6 @@ type DBWrapper struct {
 	Db *gorm.DB
 }
 
-const SCHEMA_NAME = "instabug"
-
 //return a thread-safe *gorm.DB that can safely be used
 //by multiple goroutines
 func New() *DBWrapper {

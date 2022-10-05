@@ -17,6 +17,7 @@ func (db *DBWrapper) InsertMessage(m *Message) *gorm.DB {
 	return db.Db.Create(m)
 }
 
+//only update those 2 fields
 func (db *DBWrapper) UpdateMessage(m *Message) *gorm.DB {
-	return db.Db.Save(m)
+	return db.Db.Model(m).Select("Updated_at", "Body").Updates(*m)
 }

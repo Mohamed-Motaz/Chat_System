@@ -88,12 +88,28 @@ func (worker *Worker) doWork(obj *q.TransferObj) {
 				logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to insert message with error %v", err)
 				return
 			}
+		default:
+			logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to decode obj from the queue %+v", obj)
 		}
 
+	} else if obj.Action == q.UPDATE_ACTION {
+		switch obj.ObjType {
+		case q.MESSAGE:
+			m := &q.Message{}
+			err := json.Unmarshal(obj.Bytes, m)
+			fmt.Printf("This is the data received %+v\n", m)
+			if err != nil {
+				logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to parse request to update message %v\nwith error %v", string(obj.Bytes), err)
+				return
+			}
+			message := makeDbMessageFromQMessage(m)
+			err = worker.dBWrapper.UpdateMessage(message).Error
+			if err != nil {
+				logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to update message with error %v", err)
+				return
+			}
+		}
 	}
-	// else if obj.Action == q.UPDATE_ACTION{
-	// 	//fff
-	// }
 }
 
 //converts from q.Chat to db.Chat
