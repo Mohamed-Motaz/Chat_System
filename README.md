@@ -20,7 +20,61 @@ More bottlenecks:
   
   
   
-  
+API calls
+
+POST localhost:3000/api/v1/applications
+body {
+  "name": "app1"
+}
+result {
+"name": "app1",
+"token": "4e963ef6-061c-40fc-841c-36e67cd3b77d",
+"chats_count": 0
+}
+
+PUT localhost:3000/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d
+body {
+"name": "new name for app1"
+}
+result {
+  "success": "ok"
+}
+
+GET localhost:3000/api/v1/applications/
+result [
+  {
+    "name": "new name for app1",
+    "token": "4e963ef6-061c-40fc-841c-36e67cd3b77d",
+    "chats_count": 0
+  }
+]
+ 
+GET localhost:3000/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d
+result
+{
+  "name": "new name for app1",
+  "token": "4e963ef6-061c-40fc-841c-36e67cd3b77d",
+  "chats_count": 0
+}
+
+
+
+POST localhost:5555/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats
+body -- no body
+result {
+  "number": 1
+}
+
+
+POST localhost:5555/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/1/messages
+body {
+  "body": "message 1 for chat 1 in app 1"
+}
+
+PUT localhost:5555/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/1/messages/1
+body {
+  "body": "new message 1 for chat 1 in app 1"
+}
   
 Schema
 
