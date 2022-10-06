@@ -2,6 +2,7 @@ package Server
 
 import (
 	db "Server/Database"
+	es "Server/Elastic"
 	q "Server/MessageQueue"
 	c "Server/RedisCache"
 
@@ -17,6 +18,7 @@ type Server struct {
 	dBWrapper *db.DBWrapper
 	Mq        *q.MQ
 	cache     *c.Cache
+	elastic   *es.Elastic
 }
 
 const (

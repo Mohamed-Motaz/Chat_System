@@ -2,10 +2,12 @@ package Server
 
 import (
 	db "Server/Database"
+	es "Server/Elastic"
 	logger "Server/Logger"
 	q "Server/MessageQueue"
 	c "Server/RedisCache"
 	utils "Server/Utils"
+
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -24,6 +26,7 @@ func NewServer() (*Server, error) {
 		dBWrapper: db.New(),
 		Mq:        q.New("amqp://" + q.MqUsername + ":" + q.MqPassword + "@" + q.MqHost + ":" + q.MqPort + "/"),
 		cache:     c.New(c.CacheHost + ":" + c.CachePort),
+		elastic:   es.New("http://" + es.ElasticHost + ":" + es.ElasticPort),
 	}
 	r := mux.NewRouter()
 	registerRoutes(r, server)

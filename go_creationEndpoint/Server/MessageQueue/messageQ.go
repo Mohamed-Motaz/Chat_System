@@ -10,13 +10,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// func main() {
-// 	amqpAddr := "amqp://guest:guest@localhost:5672/"  //os.Getenv("AMQP_URL")
-// 	mQ := New(amqpAddr)
-// 	mQ.Publish(JOBS_QUEUE, "hiiiiiii there")
-// 	mQ.Close()
-// }
-
 func New(amqpAddr string) *MQ {
 	mq := &MQ{
 		conn: nil,

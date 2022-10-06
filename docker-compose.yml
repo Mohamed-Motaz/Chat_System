@@ -1,9 +1,10 @@
 version: "3.9" # optional since v1.27.0
 services:
-  cache:
+  cache:    
+    image: redis:latest
+    container_name: redisCache
     networks:
       - chat_system
-    image: redis:latest
     restart: always
     ports:
       - 6379:6379
@@ -12,7 +13,7 @@ services:
       - ./go_creationEndpoint/Server/RedisCache/redis.conf:/usr/local/etc/redis/redis.conf
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    # network_mode: "host"
+    container_name: rabbitMessageQueue
     networks:
       - chat_system
     ports:
@@ -21,6 +22,38 @@ services:
     volumes:
       - ~/docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
       - ~/docker-conf/rabbitmq/log/:/var/log/rabbitmq
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.11.1
+    container_name: elasticsearch
+    networks:
+      - chat_system
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: -Xmx512m -Xms512m
+      node.name: es01
+      cluster.name: elasticsearch
+    volumes:
+      - ~/docker-conf/elastic/data:/usr/share/elasticsearch/data
+   
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.11.1
+    container_name: kibana
+    networks:
+      - chat_system
+    ports:
+      - '5601:5601'
+      - '9600:9600'
+    environment:
+      SERVERNAME: kibana
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ES_JAVA_OPTS: -Xmx512m -Xms512m
+    
+    depends_on:
+      - elasticsearch
 
 networks:
   chat_system:

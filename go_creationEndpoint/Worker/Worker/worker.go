@@ -135,6 +135,8 @@ func (worker *Worker) doWork(obj *q.TransferObj) {
 				logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to update the messages ctr with error %v", err)
 				return
 			}
+		default:
+			logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to decode obj from the queue %+v", obj)
 		}
 	}
 }

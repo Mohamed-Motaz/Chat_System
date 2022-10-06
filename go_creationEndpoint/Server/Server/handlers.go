@@ -276,13 +276,13 @@ func (server *Server) updateMessage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	chatId, err := server.cache.Get(chatIdCacheKey)
+	cId, err := server.cache.Get(chatIdCacheKey)
 	if err != nil {
 		failure(w, r, http.StatusInternalServerError, "Caching layer is down")
 		return
 	}
 
-	cId, err := strconv.Atoi(chatId)
+	chatId, err := strconv.Atoi(cId)
 	if err != nil {
 		failure(w, r, http.StatusInternalServerError, "Issue while retrieving data from cache")
 		return
@@ -295,7 +295,7 @@ func (server *Server) updateMessage(w http.ResponseWriter, r *http.Request) {
 	//if I fail to update, he can then try to re insert. but adding everything to the cache doesn't make sense, especially
 	//since I anticipate a high load of messages
 
-	mId, err := server.confirmMessageNumberInDb(w, r, cId, messageNum)
+	mId, err := server.confirmMessageNumberInDb(w, r, chatId, messageNum)
 	if err != nil {
 		return
 	}
@@ -305,7 +305,9 @@ func (server *Server) updateMessage(w http.ResponseWriter, r *http.Request) {
 			Id:         mId,
 			Updated_at: time.Now(),
 		},
-		Body: req.Body,
+		Body:    req.Body,
+		Number:  int32(messageNum),
+		Chat_id: int32(chatId),
 	}
 
 	toPublish, err := server.makeMessageMqEntity(w, r, q.UPDATE_ACTION, m)

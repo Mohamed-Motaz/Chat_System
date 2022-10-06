@@ -74,6 +74,7 @@ func (cache *Cache) MakeChatIdForChatNumCacheKey(appToken string, chatNum int) s
 }
 
 func (cache *Cache) debug() {
+	time.Sleep(20 * time.Second)
 	for {
 		fmt.Println("About to print all redis keys and vals\n")
 		iter := cache.client.Scan(cache.ctx, 0, "*", 0).Iterator()
