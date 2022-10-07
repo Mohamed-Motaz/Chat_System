@@ -1,7 +1,7 @@
 package MessageQueue
 
 import (
-	logger "Server/Logger"
+	logger "Worker/Logger"
 	"bytes"
 	"context"
 	"fmt"

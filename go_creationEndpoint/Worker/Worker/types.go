@@ -2,6 +2,7 @@ package Worker
 
 import (
 	db "Worker/Database"
+	es "Worker/Elastic"
 	q "Worker/MessageQueue"
 
 	utils "Worker/Utils"
@@ -15,6 +16,7 @@ import (
 type Worker struct {
 	dBWrapper *db.DBWrapper
 	Mq        *q.MQ
+	elastic   *es.Elastic
 }
 
 const (

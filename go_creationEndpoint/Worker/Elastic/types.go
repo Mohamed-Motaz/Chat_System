@@ -1,7 +1,7 @@
 package MessageQueue
 
 import (
-	utils "Server/Utils"
+	utils "Worker/Utils"
 	"context"
 	"log"
 	"strings"

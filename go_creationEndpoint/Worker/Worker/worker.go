@@ -2,10 +2,12 @@ package Worker
 
 import (
 	db "Worker/Database"
+	es "Worker/Elastic"
 	logger "Worker/Logger"
 	q "Worker/MessageQueue"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -15,6 +17,7 @@ func NewWorker() (*Worker, error) {
 	worker := &Worker{
 		dBWrapper: db.New(),
 		Mq:        q.New("amqp://" + q.MqUsername + ":" + q.MqPassword + "@" + q.MqHost + ":" + q.MqPort + "/"),
+		elastic:   es.New("http://" + es.ElasticHost + ":" + es.ElasticPort),
 	}
 
 	go worker.qConsumer()
@@ -89,6 +92,8 @@ func (worker *Worker) doWork(obj *q.TransferObj) {
 				logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to insert message with error %v", err)
 				return
 			}
+			worker.indexChatIntoElasticSearch(message)
+
 		default:
 			logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to decode obj from the queue %+v", obj)
 		}
@@ -109,6 +114,8 @@ func (worker *Worker) doWork(obj *q.TransferObj) {
 				logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to update message with error %v", err)
 				return
 			}
+			worker.indexChatIntoElasticSearch(message)
+
 		case q.CHATS_CTR:
 			chatsCtr := &q.ChatsCtr{}
 			err := json.Unmarshal(obj.Bytes, chatsCtr)
@@ -166,5 +173,26 @@ func makeDbMessageFromQMessage(message *q.Message) *db.Message {
 		Chat_id: message.Chat_id,
 		Number:  message.Number,
 		Body:    message.Body,
+	}
+}
+
+func (worker *Worker) indexChatIntoElasticSearch(m *db.Message) {
+	e := es.ElasticObj{
+		Id:      int32(m.Id),
+		Chat_id: m.Chat_id,
+		Number:  m.Number,
+		Body:    m.Body,
+	}
+
+	obj, err := json.Marshal(e)
+	if err != nil {
+		logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to martial elastic search obj %+v with error %v", e, err)
+		return
+	}
+
+	err = worker.elastic.Index(strconv.Itoa(int(e.Id)), obj)
+	if err != nil {
+		logger.LogError(logger.WORKER, logger.ESSENTIAL, "Unable to index obj %+v with error %v", e, err)
+		return
 	}
 }

@@ -12,6 +12,7 @@ const (
 	WORKER = iota
 	DATABASE
 	MESSAGE_Q
+	ELASTIC
 )
 
 const (
@@ -103,6 +104,8 @@ func determineRole(role int) string {
 		return "DATABASE-> "
 	case WORKER:
 		return "WORKER-> "
+	case ELASTIC:
+		return "ELASTIC-> "
 	default:
 		return "UNKNOWN-> "
 	}
