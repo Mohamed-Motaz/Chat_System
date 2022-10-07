@@ -255,7 +255,7 @@ func (server *Server) updateMessage(w http.ResponseWriter, r *http.Request) {
 	//if not, call the db once and confirm its presence
 	chatIdCacheKey := server.cache.MakeChatIdForChatNumCacheKey(appToken, chatNum)
 
-	_, err = server.cache.Get(chatIdCacheKey)
+	cId, err := server.cache.Get(chatIdCacheKey)
 
 	if err != nil {
 		if err != redis.Nil {
@@ -270,16 +270,11 @@ func (server *Server) updateMessage(w http.ResponseWriter, r *http.Request) {
 		}
 		//now i am sure this chat is indeed in the db, so I need to set this chat id in redis for faster access
 		err = server.cache.Set(chatIdCacheKey, id, 0)
+		cId = strconv.Itoa(id)
 		if err != nil {
 			failure(w, r, http.StatusInternalServerError, "Caching layer is down")
 			return
 		}
-	}
-
-	cId, err := server.cache.Get(chatIdCacheKey)
-	if err != nil {
-		failure(w, r, http.StatusInternalServerError, "Caching layer is down")
-		return
 	}
 
 	chatId, err := strconv.Atoi(cId)
@@ -324,6 +319,94 @@ func (server *Server) updateMessage(w http.ResponseWriter, r *http.Request) {
 	res := &UpdateMessageRes{
 		Number: int32(messageNum),
 		Body:   req.Body,
+	}
+
+	success(w, r, res, logger.ESSENTIAL)
+}
+
+func (server *Server) searchForMessage(w http.ResponseWriter, r *http.Request) {
+
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		failure(w, r, http.StatusInternalServerError, "unable to read request")
+		return
+	}
+
+	req := &SearchForMessageReq{}
+	err = json.Unmarshal(b, req)
+	if err != nil {
+		logger.LogError(logger.SERVER, logger.ESSENTIAL, "Unable to parse request to searchForMessage %v\nwith error %v", string(b), err)
+		failure(w, r, http.StatusBadRequest, "unable to martial request")
+		return
+	}
+	req.Body = strings.TrimSpace(req.Body)
+	if len(req.Body) == 0 {
+		logger.LogError(logger.SERVER, logger.ESSENTIAL, "No body in request to searchForMessage %v", err)
+		failure(w, r, http.StatusBadRequest, "no valid body")
+		return
+	}
+
+	vars := mux.Vars(r)
+	appToken, ok := vars["appToken"]
+	if !ok || len(strings.TrimSpace(appToken)) == 0 {
+		failure(w, r, http.StatusBadRequest, "application token is missing")
+		return
+	}
+
+	cNum, ok := vars["chatNum"]
+	if !ok {
+		failure(w, r, http.StatusBadRequest, "chat number is missing")
+		return
+	}
+	chatNum, err := strconv.Atoi(cNum)
+	if err != nil {
+		failure(w, r, http.StatusBadRequest, "invalid chat number")
+		return
+	}
+
+	logger.LogInfo(logger.SERVER, logger.NON_ESSENTIAL, "The http received message to searchForMessage is %+v", req)
+
+	chatIdCacheKey := server.cache.MakeChatIdForChatNumCacheKey(appToken, chatNum)
+	cId, err := server.cache.Get(chatIdCacheKey)
+
+	if err != nil {
+		if err != redis.Nil {
+			failure(w, r, http.StatusInternalServerError, "Caching layer is down")
+			return
+		}
+
+		//so the key isn't present in cache. Now I need to call the db to confirm its presence
+		id, err := server.confirmChatNumberInDb(w, r, appToken, chatNum)
+		if err != nil {
+			return
+		}
+		//now i am sure this chat is indeed in the db, so I need to set this chat id in redis for faster access
+		err = server.cache.Set(chatIdCacheKey, id, 0)
+		cId = strconv.Itoa(id)
+		if err != nil {
+			failure(w, r, http.StatusInternalServerError, "Caching layer is down")
+			return
+		}
+	}
+
+	chatId, err := strconv.Atoi(cId)
+	if err != nil {
+		failure(w, r, http.StatusInternalServerError, "Issue while retrieving data from cache")
+		return
+	}
+
+	arr, err := server.elastic.Get(chatId, req.Body)
+	if err != nil {
+		logger.LogError(logger.SERVER, logger.ESSENTIAL, "Unable to get data from elastic with err %v", err)
+		failure(w, r, http.StatusInternalServerError, "Issue while retrieving data from elastic search")
+		return
+	}
+	res := make([]MessageRes, 0)
+	for _, e := range arr {
+		res = append(res, MessageRes{
+			Number: e.Number,
+			Body:   e.Body,
+		})
 	}
 
 	success(w, r, res, logger.ESSENTIAL)

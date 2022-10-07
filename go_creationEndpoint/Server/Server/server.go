@@ -41,6 +41,7 @@ func registerRoutes(r *mux.Router, s *Server) {
 	r.HandleFunc("/api/v1/applications/{appToken}/chats", s.addChat).Methods("POST")
 	r.HandleFunc("/api/v1/applications/{appToken}/chats/{chatNum}/messages", s.addMessage).Methods("POST")
 	r.HandleFunc("/api/v1/applications/{appToken}/chats/{chatNum}/messages/{messageNum}", s.updateMessage).Methods("PUT")
+	r.HandleFunc("/api/v1/applications/{appToken}/chats/{chatNum}/messages/search", s.searchForMessage).Methods("POST")
 
 }
 

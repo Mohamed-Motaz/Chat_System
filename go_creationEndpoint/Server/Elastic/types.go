@@ -23,10 +23,10 @@ type Elastic struct {
 
 //elastic object
 type ElasticObj struct {
-	Id      int32  `json:"id"`
-	Chat_id int32  `json:"chat_id"`
-	Number  int32  `json:"number"`
-	Body    string `json:"body"`
+	Id      int32  `json:"id"           mapstructure:"id"`
+	Chat_id int32  `json:"chat_id"      mapstructure:"chat_id"`
+	Number  int32  `json:"number"       mapstructure:"number"`
+	Body    string `json:"body"         mapstructure:"body"`
 }
 
 const (

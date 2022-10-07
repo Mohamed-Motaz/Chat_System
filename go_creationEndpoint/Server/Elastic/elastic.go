@@ -4,11 +4,13 @@ import (
 	logger "Server/Logger"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/mitchellh/mapstructure"
 )
 
 func New(elasticAddr string) *Elastic {
@@ -72,4 +74,70 @@ func (e Elastic) Index(id string, body []byte) error {
 	}
 
 	return nil
+}
+
+func (e Elastic) Get(chatId int, partialMatch string) ([]ElasticObj, error) {
+	var buf bytes.Buffer
+
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": []map[string]interface{}{
+					{"match_phrase": map[string]interface{}{
+						"body": fmt.Sprintf("(.|\n)*%s(.|\n)*", partialMatch),
+					},
+					},
+					{"match": map[string]interface{}{
+						"chat_id": chatId,
+					}},
+				},
+			},
+		},
+	}
+
+	if err := json.NewEncoder(&buf).Encode(query); err != nil {
+		return nil, err
+	}
+
+	// Perform the search request.
+	res, err := e.elastic.Search(
+		e.elastic.Search.WithContext(context.Background()),
+		e.elastic.Search.WithIndex(MESSAGES_INDEX),
+		e.elastic.Search.WithBody(&buf),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return nil, fmt.Errorf("error parsing the response body: %s", err)
+		} else {
+			return nil, fmt.Errorf("[%s] %s: %s",
+				res.Status(),
+				e["error"].(map[string]interface{})["type"],
+				e["error"].(map[string]interface{})["reason"],
+			)
+		}
+	}
+	var r map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+		return nil, fmt.Errorf("error parsing the response body: %s", err)
+	}
+
+	arr := []ElasticObj{}
+	for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
+		obj := &ElasticObj{}
+		err := mapstructure.Decode(hit.(map[string]interface{})["_source"], obj)
+		if err != nil {
+			return nil, err
+		}
+		arr = append(arr, *obj)
+	}
+
+	fmt.Printf("final %+v\n", arr)
+
+	return arr, nil
 }
