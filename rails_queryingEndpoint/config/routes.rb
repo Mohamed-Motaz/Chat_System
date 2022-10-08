@@ -7,6 +7,11 @@ Rails.application.routes.draw do
       post 'applications' => 'applications#create'
       put 'applications/:token' => 'applications#update'
 
+      get 'applications/:token/chats' => 'chats#index'
+      get 'applications/:token/chats/:chat_num' => 'chats#show'
+
+      get 'applications/:token/chats/:chat_num/messages' => 'messages#index'
+      get 'applications/:token/chats/:chat_num/messages/:message_num' => 'messages#show'
      
     end
   end
