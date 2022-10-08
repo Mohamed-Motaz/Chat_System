@@ -55,7 +55,7 @@ func (worker *Worker) qConsumer() {
 
 			consumed.Ack(false) //ack after everything is done. This should be blocking other workers which is definetly a bottleneck
 		default:
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Millisecond * 50)
 		}
 	}
 }
