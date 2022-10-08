@@ -123,92 +123,115 @@ curl -X GET \
 
 //chats
 
-POST localhost:5555/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats
-body -- no body
-result {
-  "number": 1
-}
+#### To add a chat to a specific application
+```
+curl -X POST \
+    localhost:5555/api/v1/applications/e9d1799d-6377-4828-a28a-442938690e96/chats \
+    -H 'cache-control: no-cache' \
+    -H 'content-type: application/json'
+```
+- Result 
+```
+{"number":1}
+```
 
-GET localhost:3000/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats
-body -- no body
-result [
-  {
-    "number": 1,
-    "messages_count": 2
-  },
-  {
-    "number": 2,
-    "messages_count": 2
-  }
-]
+#### To get all chats of a specific application
+```
+curl -X GET \
+    localhost:3000/api/v1/applications/e9d1799d-6377-4828-a28a-442938690e96/chats \
+    -H 'cache-control: no-cache' \
+    -H 'content-type: application/json'
+```
+- Result 
+```
+[{"number":1,"messages_count":0}]
+```
 
-GET localhost:3000/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/1
-body -- no body
-result {
-  "number": 1,
-  "messages_count": 2
-}
+#### To get a chat of a specific application by number
+```
+curl -X GET \
+    localhost:3000/api/v1/applications/e9d1799d-6377-4828-a28a-442938690e96/chats/1 \
+    -H 'cache-control: no-cache' \
+    -H 'content-type: application/json'
+```
+- Result 
+```
+{"number":1,"messages_count":0}
+```
 
 
 //messages
 
 
-POST localhost:5555/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/1/messages
-body {
-  "body": "message 1 for chat 1 in app 1"
-}
+#### To add a message to a chat number
+```
+curl -X POST \
+    localhost:5555/api/v1/applications/e9d1799d-6377-4828-a28a-442938690e96/chats/1/messages \
+    -H 'cache-control: no-cache' \
+    -H 'content-type: application/json' \
+    -d '{
+          "body": "message 1 for chat 1 in app 1"
+        }'
+```
+- Result 
+```
+{"number":1}
+```
 
-PUT localhost:5555/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/1/messages/1
-body {
-  "body": "new message 1 for chat 1 in app 1"
-}
+#### To update a message by message number
+```
+curl -X PUT \
+    localhost:5555/api/v1/applications/e9d1799d-6377-4828-a28a-442938690e96/chats/1/messages/1 \
+    -H 'cache-control: no-cache' \
+    -H 'content-type: application/json' \
+    -d '{
+          "body": "new body :) message 1 for chat 1 in app 1"
+        }'
+```
+- Result 
+```
+{"number":1,"body":"new body :) message 1 for chat 1 in app 1"}
+```
 
-GET localhost:3000/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/2/messages
-body -- no body
-result [
-  {
-    "number": 1,
-    "body": "hi my dude\n this is me. \nman what the hell"
-  },
-  {
-    "number": 2,
-    "body": "message 2 for chat 2 in app 1"
-  },
-  {
-    "number": 3,
-    "body": "message 3 for chat 2 in app 1"
-  }
-]
+#### To get all messages for a specific chat
+```
+curl -X GET \
+    localhost:3000/api/v1/applications/e9d1799d-6377-4828-a28a-442938690e96/chats/1/messages \
+    -H 'cache-control: no-cache' \
+    -H 'content-type: application/json'
+```
+- Result 
+```
+[{"number":1,"body":"new body :) message 1 for chat 1 in app 1"}]
+```
 
-GET localhost:3000/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/2/messages/1
-body -- no body
-result {
-  "number": 1,
-  "body": "hi my dude\n this is me. \nman what the hell"
-}
+#### To get a message for a specific chat by message number
+```
+curl -X GET \
+    localhost:3000/api/v1/applications/e9d1799d-6377-4828-a28a-442938690e96/chats/1/messages/1 \
+    -H 'cache-control: no-cache' \
+    -H 'content-type: application/json'
+```
+- Result 
+```
+{"number":1,"body":"new body :) message 1 for chat 1 in app 1"}
+```
 
-Schema
+#### To search for a message body (partial text match using elastic) for a specific chat
 
-Applications				//persisted immediately
-Id: int
-Token: uuid  //unique index
-Name: string
-Chats_count: int
-
-
-
-Chats					//may lag for up to an hour
-Id: int
-applicationId: int  //foreign key
-Number: int
-Messages_count: int
-
-Messages				//may lag for up to an hour
-Id: int
-chatId: int
-Number: int
-Body: text
-
+```
+curl -X POST \
+    localhost:5555/api/v1/applications/e9d1799d-6377-4828-a28a-442938690e96/chats/1/messages/search \
+    -H 'cache-control: no-cache' \
+    -H 'content-type: application/json' \
+    -d '{
+          "body": "message 1"
+        }'
+```
+- Result 
+```
+[{"number":1,"body":"new body :) message 1 for chat 1 in app 1"}]
+```
 
 # **Distributed Web Crawler**
 ![systemArchi drawio](https://user-images.githubusercontent.com/53558209/155814673-c201500d-7f48-4223-82a3-7bf9b7633190.png)
