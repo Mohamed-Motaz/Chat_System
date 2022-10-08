@@ -21,7 +21,6 @@ func New(amqpAddr string) *MQ {
 	//try to reconnect and sleep 2 seconds on failure
 	var err error = fmt.Errorf("error")
 	ctr := 0
-
 	for ctr < 3 && err != nil {
 		err = mq.connect(amqpAddr)
 		ctr++
@@ -31,9 +30,9 @@ func New(amqpAddr string) *MQ {
 	}
 
 	if err != nil {
-		logger.FailOnError(logger.DATABASE, logger.ESSENTIAL, "Unable to setup the MessageQueue")
+		logger.FailOnError(logger.MESSAGE_Q, logger.ESSENTIAL, "Unable to setup the MessageQueue %+v\n", amqpAddr)
 	} else {
-		logger.LogInfo(logger.DATABASE, logger.ESSENTIAL, "MessageQueue setup complete")
+		logger.LogInfo(logger.MESSAGE_Q, logger.ESSENTIAL, "MessageQueue setup complete")
 	}
 	return mq
 }
@@ -92,13 +91,15 @@ func (mq *MQ) connect(amqpAddr string) error {
 
 	conn, err := amqp.Dial(amqpAddr)
 	if err != nil {
-		logger.FailOnError(logger.MESSAGE_Q, logger.ESSENTIAL, "Exiting because of err while establishing connection with message queue %v", err)
+		logger.LogError(logger.MESSAGE_Q, logger.ESSENTIAL, "Exiting because of err while establishing connection with message queue %v", err)
+		return err
 	}
 	mq.conn = conn
 
 	ch, err := conn.Channel()
 	if err != nil {
-		logger.FailOnError(logger.MESSAGE_Q, logger.ESSENTIAL, "Exiting because of err while opening a channel %v", err)
+		logger.LogError(logger.MESSAGE_Q, logger.ESSENTIAL, "Exiting because of err while opening a channel %v", err)
+		return err
 	}
 	mq.ch = ch
 

@@ -1,8 +1,9 @@
 version: "3.9" # optional since v1.27.0
 services:
+
   cache:    
     image: redis:latest
-    container_name: redisCache
+    container_name: cache
     networks:
       - chat_system
     restart: always
@@ -11,9 +12,10 @@ services:
     volumes:
       - ~/docker-conf/redis/data/:/data
       - ./go_creationEndpoint/Server/RedisCache/redis.conf:/usr/local/etc/redis/redis.conf
-  rabbitmq:
+
+  messagequeue:
     image: rabbitmq:3-management-alpine
-    container_name: rabbitMessageQueue
+    container_name: messagequeue
     networks:
       - chat_system
     ports:
@@ -22,6 +24,7 @@ services:
     volumes:
       - ~/docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
       - ~/docker-conf/rabbitmq/log/:/var/log/rabbitmq
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.11.1
     container_name: elasticsearch
@@ -37,7 +40,6 @@ services:
       cluster.name: elasticsearch
     volumes:
       - ~/docker-conf/elastic/data:/usr/share/elasticsearch/data
-   
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.11.1
@@ -51,10 +53,122 @@ services:
       SERVERNAME: kibana
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
       ES_JAVA_OPTS: -Xmx512m -Xms512m
-    
     depends_on:
       - elasticsearch
+
+  db:
+    image: mysql:8
+    container_name: db
+    networks:
+      - chat_system
+    ports:
+      - 3307:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: instabug
+      MYSQL_PASSWORD: instabug
+      MYSQL_DATABASE: instabug
+      MYSQL_USER: instabug
+    volumes:
+      - .~/docker-conf/mysql/data:/docker-entrypoint-initdb.d/
+
+  goserver:
+    container_name: goserver
+    networks:
+      - chat_system
+    depends_on:
+      - messagequeue
+      - cache
+      - elasticsearch
+      - db
+    environment:
+      - MY_PORT=5555
+      - MY_HOST=goserver
+      - DEBUG_LOGS=0
+      - ESSENTIAL_LOGS=1
+
+      - MQ_HOST=messagequeue
+      - MQ_PORT=5672
+      - MQ_USERNAME=guest
+      - MQ_PASSWORD=guest
+
+      - CACHE_HOST=cache
+      - CACHE_PORT=6379
+
+      - ELASTIC_HOST=elasticsearch
+      - ELASTIC_PORT=9200
+
+      - DB_USER=instabug 
+      - DB_PASSWORD=instabug
+      - DB_PROTOCOL=tcp
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_SETTINGS=charset=utf8mb4&parseTime=True&loc=Local
+    ports:
+      - 5555:5555
+    build:
+      context: ./go_creationEndpoint/Server
+      dockerfile: ./Dockerfile   
+
+  goworker:
+    container_name: goworker
+    networks:
+      - chat_system
+    depends_on:
+      - messagequeue
+      - cache
+      - elasticsearch
+      - db
+    environment:
+      - DEBUG_LOGS=0
+      - ESSENTIAL_LOGS=1
+
+      - MQ_HOST=messagequeue
+      - MQ_PORT=5672
+      - MQ_USERNAME=guest
+      - MQ_PASSWORD=guest
+
+      - CACHE_HOST=cache
+      - CACHE_PORT=6379
+
+      - ELASTIC_HOST=elasticsearch
+      - ELASTIC_PORT=9200
+
+      - DB_USER=instabug 
+      - DB_PASSWORD=instabug
+      - DB_PROTOCOL=tcp
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_SETTINGS=charset=utf8mb4&parseTime=True&loc=Local
+    build:
+      context: ./go_creationEndpoint/Worker
+      dockerfile: ./Dockerfile   
+
+  ruby_server:
+    container_name: ruby_server
+    networks:
+      - chat_system
+    ports:
+      - "3000:3000"
+    build:
+      context: ./rails_queryingEndpoint
+      dockerfile: ./Dockerfile
+    depends_on:
+      - db
+    environment:
+      - DB_USER=instabug 
+      - DB_PASSWORD=instabug
+      - DB_HOST=db
+      - DB_PORT=3306
+
 
 networks:
   chat_system:
     driver: bridge
+
+
+
+
+
+
+
+

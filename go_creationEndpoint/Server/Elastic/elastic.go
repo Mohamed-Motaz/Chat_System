@@ -29,7 +29,17 @@ func New(elasticAddr string) *Elastic {
 		timeout: time.Second * 10,
 	}
 
+	ctr := 0
 	res, err := es.Indices.Exists([]string{MESSAGES_INDEX})
+	for ctr < 5 {
+		ctr++
+		if err == nil {
+			continue
+		}
+		res, err = es.Indices.Exists([]string{MESSAGES_INDEX})
+		time.Sleep(10 * time.Second)
+	}
+
 	if err != nil {
 		logger.FailOnError(logger.ELASTIC, logger.ESSENTIAL, "Unable to check if elastic index exists with err %+v", err)
 	}

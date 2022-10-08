@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-const IN_DOCKER bool = false
+const IN_DOCKER bool = true
 
 //THIS METHOD SHOULD BE CALLED ONLY ONCE
 func InitDirectories(dataFolder string) {
