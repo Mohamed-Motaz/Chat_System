@@ -62,12 +62,12 @@ curl -X POST \
 
 #### To update an application
 ```
-curl -X PUT \ 
+curl -X PUT \
     localhost:3000/api/v1/applications/e9d1799d-6377-4828-a28a-442938690e96 \
     -H 'cache-control: no-cache' \
     -H 'content-type: application/json' \
     -d '{
-            "name": "new name for app1" 
+            "name": "new name for app1"
         }'
 ```
 - Result 
