@@ -22,6 +22,8 @@ More bottlenecks:
   
 API calls
 
+//apps
+
 POST localhost:3000/api/v1/applications
 body {
   "name": "app1"
@@ -59,11 +61,37 @@ result
 
 
 
+
+//chats
+
 POST localhost:5555/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats
 body -- no body
 result {
   "number": 1
 }
+
+GET localhost:3000/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats
+body -- no body
+result [
+  {
+    "number": 1,
+    "messages_count": 2
+  },
+  {
+    "number": 2,
+    "messages_count": 2
+  }
+]
+
+GET localhost:3000/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/1
+body -- no body
+result {
+  "number": 1,
+  "messages_count": 2
+}
+
+
+//messages
 
 
 POST localhost:5555/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/1/messages
@@ -75,7 +103,31 @@ PUT localhost:5555/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chat
 body {
   "body": "new message 1 for chat 1 in app 1"
 }
-  
+
+GET localhost:3000/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/2/messages
+body -- no body
+result [
+  {
+    "number": 1,
+    "body": "hi my dude\n this is me. \nman what the hell"
+  },
+  {
+    "number": 2,
+    "body": "message 2 for chat 2 in app 1"
+  },
+  {
+    "number": 3,
+    "body": "message 3 for chat 2 in app 1"
+  }
+]
+
+GET localhost:3000/api/v1/applications/4e963ef6-061c-40fc-841c-36e67cd3b77d/chats/2/messages/1
+body -- no body
+result {
+  "number": 1,
+  "body": "hi my dude\n this is me. \nman what the hell"
+}
+
 Schema
 
 Applications				//persisted immediately
